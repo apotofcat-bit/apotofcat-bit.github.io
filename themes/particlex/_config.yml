@@ -2,12 +2,12 @@
 # https://github.com/theme-particlex/hexo-theme-particlex
 
 # Avatar image
-avatar: /images/avatar.jpg
+avatar: /images/2023-06-07183319.jpg
 
 # Home page background image
 background:
-    - /images/background.jpg
-
+    - /images/65605301_p0.jpg
+    
 # Loading image
 loading: /images/loading.gif
 
@@ -49,11 +49,12 @@ menu:
 card:
     enable: true
     description: |
-        Description
-        ...
+        一个破学天文的。
+        记录工作和玩耍（？）的日常。
+
     iconLinks:
     friendLinks:
-        Argvchs: https://argvchs.github.io
+        花壇少年: https://huatan.org/
 
 # Footer info
 footer:

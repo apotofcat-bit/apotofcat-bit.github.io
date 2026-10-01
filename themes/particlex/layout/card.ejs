@@ -11,7 +11,7 @@
         <div class="icon-links">
             <% Object.entries(theme.card.iconLinks).forEach(([key, value]) => { %>
             <span class="icon-link">
-                <a href="<%- url_for(value.link) %>">
+                <a href="<%- /^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value.link) ? value.link : url_for(value.link) %>">
                     <i
                         class="fa-<%- value.theme %> fa-<%- value.name %> fa-fw"
                     ></i>
@@ -24,7 +24,7 @@
         <div class="friend-links">
             <% Object.entries(theme.card.friendLinks).forEach(([key, value]) => { %>
             <div class="friend-link">
-                <a href="<%- url_for(value) %>"><%= key %></a>
+                <a href="<%- /^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value) ? value : url_for(value) %>"><%= key %></a>
             </div>
             <% }); %>
         </div>

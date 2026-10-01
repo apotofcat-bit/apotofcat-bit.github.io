@@ -1,72 +1,52 @@
+<%
+    // 当前是否正在看某个分类的归档（网址 /categories/xxx/）
+    let selected = null;
+    site.categories.forEach((category) => {
+        if (is_category(category.name)) selected = category;
+    });
+
+    const categories = site.categories.toArray();
+
+    // 颜色由名字哈希得到，同一个分类每次构建都是同一个颜色
+    const hueOf = (text) => {
+        let hue = 0;
+        for (let i = 0; i < text.length; i++) {
+            hue = (hue * 31 + text.charCodeAt(i)) % 360;
+        }
+        return hue;
+    };
+%>
 <div id="archives">
-    <% let posts = []; %>
-    <div class="categories-tags">
-        <% let prev; %>
-        <% site.categories.forEach((category) => { %>
-        <%
-            const colors = is_category(category.name)
-                ? ["linear-gradient(120deg, #9abbf7 0%, #ffbbf4 100%)"]
-                : theme.colors.filter((color) => color !== prev);
-            let id = Math.floor(Math.random() * colors.length);
-            prev = colors[id];
-        %>
-        <span>
-            <a href="<%- url_for(category.path) %>" style="background: <%- colors[id] %>">
-                <span class="icon">
-                    <i class="fa-solid fa-bookmark fa-fw"></i>
-                </span>
-                <%= category.name %>
-            </a>
-        </span>
-        <% if (is_category(category.name)) { %>
-        <%
-            posts = category.posts;
-            posts.data.sort((a, b) => b.date - a.date);
-        %>
+    <div class="taxonomy-cards">
+        <% if (categories.length === 0) { %>
+        <div class="taxonomy-empty">
+            还没有分类。在文章的 front-matter 里加上
+            <code>categories: [随笔]</code>，这里就会自动出现分类卡片。
+        </div>
         <% } %>
+        <% categories.forEach((category) => { %>
+        <%
+            const hue = hueOf(category.name);
+            const cardStyle = `background-image: linear-gradient(135deg, hsl(${hue}, 62%, 72%) 0%, hsl(${(hue + 45) % 360}, 62%, 80%) 100%);`;
+        %>
+        <a
+            class="taxonomy-card<%- selected && selected.name === category.name ? " active" : "" %>"
+            href="<%- url_for(category.path) %>"
+            style="<%- cardStyle %>"
+        >
+            <span class="taxonomy-name">
+                <span class="icon"><i class="fa-solid fa-bookmark fa-fw"></i></span>
+                <%= category.name %>
+            </span>
+            <span class="taxonomy-count"><%= category.posts.length %> 篇</span>
+        </a>
         <% }); %>
     </div>
-    <% posts.forEach((post) => { %>
-    <div class="timeline">
-        <div class="timeline-tail"></div>
-        <div class="timeline-content">
-            <div class="item-time"><%= date(post.date, "YYYY/M/D") %></div>
-            <a href="<%- url_for(post.path) %>">
-                <h3><%= post.title %></h3>
-            </a>
-            <div class="info">
-                <% if (post.categories && post.categories.data.length !== 0) { %>
-                <span class="category">
-                    <a href="<%- url_for(post.categories.data[0].path) %>">
-                        <span class="icon">
-                            <i class="fa-solid fa-bookmark fa-fw"></i>
-                        </span>
-                        <%= post.categories.data[0].name %>
-                    </a>
-                </span>
-                <% } %>
-                <% if (post.tags && post.tags.data.length !== 0) { %>
-                <span class="tags">
-                    <span class="icon">
-                        <i class="fa-solid fa-tags fa-fw"></i>
-                    </span>
-                    <% let prev; %>
-                    <% post.tags.data.forEach((tag) => { %>
-                    <span class="tag">
-                        <%
-                            const colors = theme.colors.filter((color) => color !== prev);
-                            let id = Math.floor(Math.random() * colors.length);
-                            prev = colors[id];
-                        %>
-                        <a href="<%- url_for(tag.path) %>" style="color: <%- colors[id] %>">
-                            <%= tag.name %>
-                        </a>
-                    </span>
-                    <% }); %>
-                </span>
-                <% } %>
-            </div>
-        </div>
-    </div>
-    <% }); %>
+    <% if (!selected && categories.length > 0) { %>
+    <div class="taxonomy-hint">点上面的卡片，查看该分类下的文章</div>
+    <% } %>
+    <% if (selected) { %>
+    <% const posts = selected.posts.toArray().sort((a, b) => b.date - a.date); %>
+    <%- partial("timeline", { posts }) %>
+    <% } %>
 </div>

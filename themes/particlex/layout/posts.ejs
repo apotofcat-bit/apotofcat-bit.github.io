@@ -9,67 +9,106 @@
     posts = posts.slice(current, config.index_generator.per_page + current);
 %>
 <% posts.forEach((post) => { %>
-<div class="post">
-    <a href="<%- url_for(post.path) %>">
-        <h2 class="post-title"><%= post.title %></h2>
-    </a>
-    <div class="category-and-date">
-        <% if (post.categories.data.length !== 0) { %>
-        <span class="category">
-            <a href="<%- url_for(post.categories.data[0].path) %>">
-                <span class="icon">
-                    <i class="fa-solid fa-bookmark fa-fw"></i>
-                </span>
-                <%= post.categories.data[0].name %>
-            </a>
-        </span>
-        <% } %>
-        <span class="date">
-            <span class="icon">
-                <i class="fa-solid fa-calendar fa-fw"></i>
-            </span>
-            <%- date(post.date, "YYYY/M/D") %>
-        </span>
-        <% if (theme.crypto.enable && typeof post.secret !== "undefined") { %>
-        <span class="special">
-            <i class="fa-solid fa-lock fa-fw"></i>
-        </span>
-        <% } %>
-        <% if (typeof post.pinned !== "undefined") { %>
-        <span class="special">
-            <i class="fa-solid fa-grip-vertical fa-fw"></i>
-        </span>
-        <% } %>
+<%
+    // 封面：优先取 front-matter 里的 cover
+    const cover = post.cover || null;
+
+    // 没有封面时用渐变兜底，色相由标题算出，保证每次构建结果一致
+    let hue1 = 0;
+    const seed = String(post.title || post.path || "");
+    for (let i = 0; i < seed.length; i++) {
+        hue1 = (hue1 * 31 + seed.charCodeAt(i)) % 360;
+    }
+    const hue2 = (hue1 + 45) % 360;
+    const coverStyle = cover
+        ? ""
+        : `background-image: linear-gradient(135deg, hsl(${hue1}, 62%, 72%) 0%, hsl(${hue2}, 62%, 80%) 100%);`;
+
+    // 摘要：description > excerpt > 正文截断
+    let excerptHtml = null,
+        excerptText = null;
+    if (typeof post.description !== "undefined" && post.description) {
+        excerptHtml = markdown(post.description);
+    } else if (post.excerpt) {
+        excerptHtml = post.excerpt;
+    } else {
+        // 先把标签换成空格再剥标签，否则相邻块级元素之间会连成一个词
+        excerptText = truncate(
+            strip_html(String(post.content).replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim(),
+            { length: 140 }
+        );
+    }
+%>
+<article class="post<%- cover ? "" : " post-no-cover" %>">
+    <div class="post-cover"<%- coverStyle ? ` style="${coverStyle}"` : "" %>>
+        <a href="<%- url_for(post.path) %>" class="post-cover-link" aria-hidden="true" tabindex="-1">
+            <% if (cover) { %>
+            <img src="<%- url_for(cover) %>" alt="<%= post.title %>" loading="lazy" decoding="async" />
+            <% } %>
+        </a>
     </div>
-    <div class="description">
-        <div class="content" v-pre>
-            <% if (typeof post.description !== "undefined") { %>
-            <%- markdown(post.description) %>
-            <% } else if (post.excerpt) { %>
-            <%- post.excerpt %>
-            <% } else { %>
-            <%- post.content %>
+    <div class="post-info">
+        <div class="post-meta">
+            <span class="meta-item" title="发布日期">
+                <span class="icon"><i class="fa-regular fa-calendar fa-fw"></i></span>
+                <%- date(post.date, "YYYY/M/D") %>
+            </span>
+            <span class="meta-item" title="字数">
+                <span class="icon"><i class="fa-solid fa-pen-nib fa-fw"></i></span>
+                <%- symbolsCount(post) %> 字
+            </span>
+            <span class="meta-item" title="预计阅读时长">
+                <span class="icon"><i class="fa-regular fa-clock fa-fw"></i></span>
+                <%- symbolsTime(post) %> 分钟
+            </span>
+            <% if (theme.crypto.enable && typeof post.secret !== "undefined") { %>
+            <span class="meta-item meta-special" title="已加密">
+                <i class="fa-solid fa-lock fa-fw"></i>
+            </span>
+            <% } %>
+            <% if (typeof post.pinned !== "undefined") { %>
+            <span class="meta-item meta-special" title="置顶">
+                <i class="fa-solid fa-grip-vertical fa-fw"></i>
+            </span>
             <% } %>
         </div>
+        <h2 class="post-title">
+            <a href="<%- url_for(post.path) %>"><%= post.title %></a>
+        </h2>
+        <div class="post-excerpt">
+            <% if (excerptHtml !== null) { %>
+            <%- excerptHtml %>
+            <% } else { %>
+            <%= excerptText %>
+            <% } %>
+        </div>
+        <div class="post-footer">
+            <div class="post-tags">
+                <% if (post.categories.data.length !== 0) { %>
+                <span class="category">
+                    <span class="icon"><i class="fa-solid fa-bookmark fa-fw"></i></span>
+                    <a href="<%- url_for(post.categories.data[0].path) %>"><%= post.categories.data[0].name %></a>
+                </span>
+                <% } %>
+                <% if (post.tags.data.length !== 0) { %>
+                <span class="icon">
+                    <i class="fa-solid fa-tags fa-fw"></i>
+                </span>
+                <% } %>
+                <% let prev; %>
+                <% post.tags.data.forEach((tag) => { %>
+                <span class="tag">
+                    <%
+                        const colors = theme.colors.filter((color) => color !== prev);
+                        let id = Math.floor(Math.random() * colors.length);
+                        prev = colors[id];
+                    %>
+                    <a href="<%- url_for(tag.path) %>" style="color: <%- colors[id] %>"><%= tag.name %></a>
+                </span>
+                <% }); %>
+            </div>
+        </div>
+        <a href="<%- url_for(post.path) %>" class="go-post">阅读全文</a>
     </div>
-    <div class="post-tags">
-        <% if (post.tags.data.length !== 0) { %>
-        <span class="icon">
-            <i class="fa-solid fa-tags fa-fw"></i>
-        </span>
-        <% } %>
-        <% let prev; %>
-        <% post.tags.data.forEach((tag) => { %>
-        <span class="tag">
-            <%
-                const colors = theme.colors.filter((color) => color !== prev);
-                let id = Math.floor(Math.random() * colors.length);
-                prev = colors[id];
-            %>
-            <a href="<%- url_for(tag.path) %>" style="color: <%- colors[id] %>"><%= tag.name %></a>
-        </span>
-        <% }); %>
-    </div>
-    <a href="<%- url_for(post.path) %>" class="go-post">阅读全文</a>
-</div>
+</article>
 <% }); %>

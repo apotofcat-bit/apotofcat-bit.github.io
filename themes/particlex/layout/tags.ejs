@@ -1,72 +1,52 @@
+<%
+    // 当前是否正在看某个标签的归档（网址 /tags/xxx/）
+    let selected = null;
+    site.tags.forEach((tag) => {
+        if (is_tag(tag.name)) selected = tag;
+    });
+
+    const tags = site.tags.toArray();
+    const maxCount = tags.reduce((max, tag) => Math.max(max, tag.posts.length), 0);
+
+    const hueOf = (text) => {
+        let hue = 0;
+        for (let i = 0; i < text.length; i++) {
+            hue = (hue * 31 + text.charCodeAt(i)) % 360;
+        }
+        return hue;
+    };
+%>
 <div id="archives">
-    <% let posts = []; %>
-    <div class="categories-tags">
-        <% let prev; %>
-        <% site.tags.forEach((tag) => { %>
-        <%
-            const colors = is_tag(tag.name)
-                ? ["linear-gradient(120deg, #9abbf7 0%, #ffbbf4 100%)"]
-                : theme.colors.filter((color) => color !== prev);
-            let id = Math.floor(Math.random() * colors.length);
-            prev = colors[id];
-        %>
-        <span>
-            <a href="<%- url_for(tag.path) %>" style="background: <%- colors[id] %>">
-                <span class="icon">
-                    <i class="fa-solid fa-tags fa-fw"></i>
-                </span>
-                <%= tag.name %>
-            </a>
-        </span>
-        <% if (is_tag(tag.name)) { %>
-        <%
-            posts = tag.posts;
-            posts.data.sort((a, b) => b.date - a.date);
-        %>
+    <div class="taxonomy-cloud">
+        <% if (tags.length === 0) { %>
+        <div class="taxonomy-empty">
+            还没有标签。在文章的 front-matter 里加上
+            <code>tags: [Hexo, 主题]</code>，这里就会自动出现标签。
+        </div>
         <% } %>
+        <% tags.forEach((tag) => { %>
+        <%
+            // 文章越多字号越大：最少 12.5px，最多 21.5px
+            const ratio = maxCount > 1 ? (tag.posts.length - 1) / (maxCount - 1) : 0;
+            const size = (12.5 + ratio * 9).toFixed(1);
+            const hue = hueOf(tag.name);
+            const tagStyle = `font-size: ${size}px; background: hsla(${hue}, 62%, 72%, 0.18); color: hsl(${hue}, 45%, 42%);`;
+        %>
+        <a
+            class="taxonomy-tag<%- selected && selected.name === tag.name ? " active" : "" %>"
+            href="<%- url_for(tag.path) %>"
+            style="<%- tagStyle %>"
+        >
+            #<%= tag.name %>
+            <span class="taxonomy-count"><%= tag.posts.length %></span>
+        </a>
         <% }); %>
     </div>
-    <% posts.forEach((post) => { %>
-    <div class="timeline">
-        <div class="timeline-tail"></div>
-        <div class="timeline-content">
-            <div class="item-time"><%= date(post.date, "YYYY/M/D") %></div>
-            <a href="<%- url_for(post.path) %>">
-                <h3><%= post.title %></h3>
-            </a>
-            <div class="info">
-                <% if (post.categories && post.categories.data.length !== 0) { %>
-                <span class="category">
-                    <a href="<%- url_for(post.categories.data[0].path) %>">
-                        <span class="icon">
-                            <i class="fa-solid fa-bookmark fa-fw"></i>
-                        </span>
-                        <%= post.categories.data[0].name %>
-                    </a>
-                </span>
-                <% } %>
-                <% if (post.tags && post.tags.data.length !== 0) { %>
-                <span class="tags">
-                    <span class="icon">
-                        <i class="fa-solid fa-tags fa-fw"></i>
-                    </span>
-                    <% let prev; %>
-                    <% post.tags.data.forEach((tag) => { %>
-                    <span class="tag">
-                        <%
-                            const colors = theme.colors.filter((color) => color !== prev);
-                            let id = Math.floor(Math.random() * colors.length);
-                            prev = colors[id];
-                        %>
-                        <a href="<%- url_for(tag.path) %>" style="color: <%- colors[id] %>">
-                            <%= tag.name %>
-                        </a>
-                    </span>
-                    <% }); %>
-                </span>
-                <% } %>
-            </div>
-        </div>
-    </div>
-    <% }); %>
+    <% if (!selected && tags.length > 0) { %>
+    <div class="taxonomy-hint">点上面的标签，查看该标签下的文章</div>
+    <% } %>
+    <% if (selected) { %>
+    <% const posts = selected.posts.toArray().sort((a, b) => b.date - a.date); %>
+    <%- partial("timeline", { posts }) %>
+    <% } %>
 </div>

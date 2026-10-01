@@ -1,0 +1,28 @@
+# 站点级主题配置覆盖
+#
+# Hexo 会把这个文件「深度合并」到 themes/particlex/_config.yml 之上：
+# 这里只写你想改的项，没写的继续用主题里的默认值。
+# 好处是主题目录保持原样，以后升级主题不会把你的自定义内容冲掉。
+# 文档：https://hexo.io/zh-cn/docs/configuration#主题配置
+
+# 右栏名片下方的图标链接
+# 格式（每多一个就照抄一段，注意缩进：链接名 4 空格，name/theme/link 8 空格）：
+#     显示用的名字:
+#         name:  Font Awesome 的图标名，去 https://fontawesome.com/icons 搜
+#         theme: brands / solid / regular（图标属于哪一套）
+#         link:  要跳转的网址
+#
+# link 支持三种写法：
+#   - 完整网址     https://github.com/apotofcat-bit
+#   - 站内路径     /about
+#   - mailto: 邮箱 mailto:someone@example.com
+card:
+    iconLinks:
+        GitHub:
+            name: github
+            theme: brands
+            link: https://github.com/apotofcat-bit
+        Email:
+            name: envelope
+            theme: solid
+            link: mailto:apotofcat@gmail.com
